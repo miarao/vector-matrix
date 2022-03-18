@@ -5,6 +5,7 @@ package vector
 import (
 	"errors"
 	"fmt"
+	"math"
 	"strconv"
 )
 
@@ -22,11 +23,21 @@ type Operations interface {
 	Invert()
 }
 
+func New(x ...float64) Vector {
+	res := make(Vector, 0)
+
+	for i := range x {
+		res = append(res, x[i])
+	}
+
+	return res
+}
+
 func NewZeroVector(len int) Vector {
 	return make(Vector, len)
 }
 
-func New(val []interface{}) (Vector, error) {
+func NewFromSlice(val []interface{}) (Vector, error) {
 	v := make([]float64, len(val))
 
 	for i, value := range val {
@@ -53,27 +64,42 @@ func New(val []interface{}) (Vector, error) {
 	return v, nil
 }
 
+func (v *Vector) Equals(u *Vector) bool {
+	if v.Dimension() != v.Dimension() {
+		return false
+	}
+
+	for i := range *v {
+		if (*v)[i] != (*u)[i] {
+			return false
+		}
+	}
+
+	return true
+}
+
 func (v Vector) Copy() Vector {
 	vec := make(Vector, len(v))
 	copy(vec, v)
 	return vec
 }
 
-func (v Vector) Scale(scalar float64) Vector {
-	vec := make(Vector, len(v))
+func (v *Vector) Scale(scalar float64) Vector {
+	u := *v
+	vec := make(Vector, len(u))
 
-	for i, val := range v {
+	for i, val := range u {
 		vec[i] = val * scalar
 	}
 
 	return vec
 }
 
-func (v Vector) Dimension() int {
-	return len(v)
+func (v *Vector) Dimension() int {
+	return len(*v)
 }
 
-func MatchingDimensions(v Vector, u Vector) error {
+func (v *Vector) matchDim(u *Vector) error {
 	if v.Dimension() != u.Dimension() {
 		return ErrIncompatibleDimensions
 	}
@@ -81,12 +107,23 @@ func MatchingDimensions(v Vector, u Vector) error {
 	return nil
 }
 
-func (v Vector) Invert() Vector {
-	vec := make(Vector, len(v))
+func (v *Vector) Invert() Vector {
+	u := *v
+	vec := make(Vector, len(u))
 
-	for i := range v {
-		v[i] = NegativeUnitElement * v[i]
+	for i := range u {
+		vec[i] = NegativeUnitElement * u[i]
 	}
 
 	return vec
+}
+
+func (v *Vector) Magnitude() float64 {
+	mag, _ := v.Dot(v)
+
+	return math.Sqrt(mag)
+}
+
+func (v *Vector) Normalize() Vector {
+	return v.Scale(1 / v.Magnitude())
 }
